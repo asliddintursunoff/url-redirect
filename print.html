@@ -1,21 +1,11 @@
-<!DOCTYPE html>
-<html lang="uz">
-<head>
-  <meta charset="UTF-8">
-  <title>Printing…</title>
-</head>
-<body>
-  <p>Printing receipt…</p>
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const data = params.get("data");
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const data = params.get("data");
 
-    if (data) {
-      // 🚀 Direct auto-open RawBT
-      window.location.href = "rawbt://print?data=" + data;
-    } else {
-      document.body.innerHTML = "<p>Xatolik: ma'lumot topilmadi</p>";
-    }
-  </script>
-</body>
-</html>
+  if (data) {
+    // 🚀 Forward as raw ESC/POS (hex)
+    window.location.href = "rawbt://print?hex=" + data;
+  } else {
+    document.body.innerHTML = "<p>Xatolik: ma'lumot topilmadi</p>";
+  }
+</script>
