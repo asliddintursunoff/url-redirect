@@ -2,7 +2,8 @@
 const params = new URLSearchParams(window.location.search);
 const data = params.get("data");
 if (data) {
-  window.location.href = "rawbt://data=" + encodeURIComponent(data); // Alternative format
+  // Test alternative format: rawbt://<encoded_data>
+  window.location.href = "rawbt://" + encodeURIComponent(data);
 } else {
   document.body.innerText = "No data provided!";
 }
