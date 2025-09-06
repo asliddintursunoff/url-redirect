@@ -2,8 +2,7 @@
 const params = new URLSearchParams(window.location.search);
 const data = params.get("data");
 if (data) {
-  // Use absolute URL with RawBT protocol
-  window.location.href = "rawbt://print?data=" + encodeURIComponent(data);
+  window.location.href = "rawbt://data=" + encodeURIComponent(data); // Alternative format
 } else {
   document.body.innerText = "No data provided!";
 }
