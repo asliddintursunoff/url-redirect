@@ -1,10 +1,20 @@
-<script>
-  const params = new URLSearchParams(location.search);
-  const data = params.get("data");
-  if (data) {
-    // Base64 encoded ESC/POS → pass directly
-    window.location.href = "rawbt://print?data=" + data;
-  } else {
-    document.body.innerHTML = "<p>No data found</p>";
-  }
-</script>
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Printing…</title>
+</head>
+<body>
+  <p>Preparing receipt for printing…</p>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get("data");
+    if (data) {
+      // 🚀 Auto-open RawBT with ESC/POS Base64
+      window.location.href = "intent://print/#Intent;scheme=rawbt;S.data=" + data + ";end";
+    } else {
+      document.body.innerHTML = "<p>Xatolik: ma'lumot topilmadi</p>";
+    }
+  </script>
+</body>
+</html>
