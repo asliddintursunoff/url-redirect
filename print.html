@@ -1,11 +1,17 @@
-<script>
-  const params = new URLSearchParams(window.location.search);
-  const data = params.get("data");
-
-  if (data) {
-    // 🚀 Forward as raw ESC/POS (hex)
-    window.location.href = "rawbt://print?hex=" + data;
-  } else {
-    document.body.innerHTML = "<p>Xatolik: ma'lumot topilmadi</p>";
-  }
-</script>
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get("data");
+    if (data) {
+      window.location.href = "rawbt://print?data=" + data;
+    } else {
+      document.body.innerText = "No data provided!";
+    }
+  </script>
+</head>
+<body>
+Redirecting to RawBT...
+</body>
+</html>
