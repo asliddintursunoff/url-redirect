@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="refresh" content="0; url=rawbt://print?data=ENCODED_TEXT">
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get("data");
+    if (data) {
+      window.location.href = "rawbt://print?data=" + data;
+    } else {
+      document.body.innerText = "No data provided!";
+    }
+  </script>
 </head>
 <body>
 Redirecting to RawBT...
