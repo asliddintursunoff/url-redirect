@@ -1,115 +1,195 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chop etish</title>
   <style>
-    body {
-      font-family: "Courier New", monospace;
-      max-width: 80mm;
-      margin: 0 auto;
-      padding: 10px;
+    /* --- Layout tuned for 80mm thermal printers --- */
+    @page { size: 80mm auto; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+
+    /* The receipt is rendered to PNG and printed */
+    .wrap {
+      width: 80mm;              /* target physical width */
+      margin: 0 auto;           /* center on screen */
+      padding: 0;               /* avoid unexpected gaps when rasterizing */
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif;
+      color: #000;
     }
-    .header {
-      text-align: center;
-      border-bottom: 1px dashed #000;
-      margin-bottom: 10px;
+    #receipt {
+      padding: 8mm;             /* inner padding for content */
     }
-    .header img {
-      max-width: 60px;
-      margin-bottom: 5px;
-    }
-    .header h2 {
-      margin: 0;
-      font-size: 18px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-    th, td {
-      padding: 4px;
-      text-align: left;
-    }
-    th {
-      border-bottom: 1px solid #000;
-    }
-    tfoot td {
-      border-top: 1px solid #000;
-      font-weight: bold;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 12px;
-    }
+
+    .header { text-align: center; margin-bottom: 4mm; }
+    .header img { max-width: 50mm; max-height: 16mm; display: block; margin: 0 auto 2mm; }
+    .title { font-weight: 700; font-size: 14pt; margin: 0; }
+
+    .meta { font-size: 10pt; line-height: 1.35; margin-top: 2mm; }
+    .sep { border: 0; border-top: 1px dashed #000; margin: 4mm 0 3mm; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+    th, td { padding: 2mm 0; }
+    thead th { text-align: left; border-bottom: 1px solid #000; }
+    td.qty { text-align: center; white-space: nowrap; width: 22mm; }
+    td.money { text-align: right; white-space: nowrap; width: 24mm; }
+
+    tfoot td { border-top: 1px solid #000; font-weight: 700; padding-top: 3mm; }
+
+    .footer { text-align: center; margin-top: 5mm; font-size: 10pt; }
+
+    /* On printed page, hide controls */
+    @media print { .actions { display: none !important; } }
+
+    .actions { position: sticky; bottom: 0; background: #fff; padding: 8px; border-top: 1px solid #eee; display: flex; gap: 8px; justify-content: center; }
+    .btn { appearance: none; border: 1px solid #222; background: #fff; padding: 10px 14px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .btn:active { transform: translateY(1px); }
+    .hint { text-align: center; font-size: 12px; padding: 8px 12px; color: #444; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="logo.png" alt="Logo">
-    <h2>BUYURTMA TAFSILOTLARI</h2>
+  <div class="wrap">
+    <div id="receipt">
+      <div class="header">
+        <!-- Replace logo.png with your hosted logo path or leave empty to hide -->
+        <img id="logo" src="logo.png" alt="Logo" onerror="this.style.display='none'" />
+        <h1 class="title">BUYURTMA TAFSILOTLARI</h1>
+      </div>
+
+      <div id="meta" class="meta"></div>
+
+      <hr class="sep" />
+
+      <table id="products">
+        <thead>
+          <tr>
+            <th>Mahsulot</th>
+            <th class="qty">Soni</th>
+            <th class="money">Summa</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+
+      <div class="footer">Rahmat! Yana kutib qolamiz</div>
+    </div>
+
+    <div class="hint">Agar avtomatik chop etish chiqmasa, quyidagi tugmalardan foydalaning.</div>
+    <div class="actions">
+      <button class="btn" id="printBtn">🖨 Print now</button>
+      <a class="btn" id="downloadBtn" href="#" download="receipt.png">⬇️ Download PNG</a>
+    </div>
   </div>
 
-  <div id="meta"></div>
-
-  <table id="products">
-    <thead>
-      <tr><th>Mahsulot</th><th>Soni</th><th>Summa</th></tr>
-    </thead>
-    <tbody></tbody>
-    <tfoot></tfoot>
-  </table>
-
-  <div class="footer">
-    Rahmat! Yana kutib qolamiz
-  </div>
-
+  <!-- html2canvas for rasterizing the receipt into a PNG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNa5u9rO0QyW3L4b8q2Yb4p9mPZtNnqR4KpYk7qaqfG3B+8Qm8yqLJg+f6m3Yz8Q8uY1m1ZC7q2C9Z2Kp9G6Xg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script>
-    // Parse JSON from ?data=
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get("data");
-    let receipt = {};
-    try {
-      receipt = JSON.parse(decodeURIComponent(raw));
-    } catch (e) {
-      document.body.innerHTML = "<p>Xatolik: noto'g'ri ma'lumot</p>";
+    // Helpers
+    const qs = new URLSearchParams(location.search);
+    const raw = qs.get('data');
+
+    function fmtMoney(n) {
+      // Accept string/number; default 0
+      const num = Number(n || 0);
+      return num.toLocaleString('uz-UZ') + " so'm";
     }
 
-    // Render meta
-    document.getElementById("meta").innerHTML = `
-      <p>Buyurtmani oldi: ${receipt.order_taker}</p>
-      <p>Egasi: ${receipt.order_owner}</p>
-      <p>Olingan vaqt: ${receipt.time_taken}</p>
-      <p>Topshirilgan vaqt: ${receipt.time_given}</p>
-      <hr>
-    `;
+    function safe(str) { return (str == null ? '' : String(str)); }
 
-    // Render products
-    let total = 0;
-    const tbody = document.querySelector("#products tbody");
-    receipt.products.forEach(p => {
-      const lineTotal = p.quantity * p.price;
-      total += lineTotal;
-      tbody.innerHTML += `
+    function renderReceipt(data) {
+      const metaEl = document.getElementById('meta');
+      const tbody = document.querySelector('#products tbody');
+      const tfoot = document.querySelector('#products tfoot');
+
+      metaEl.innerHTML = `
+        <div><strong>Buyurtmani oldi:</strong> ${safe(data.order_taker)}</div>
+        <div><strong>Egasi:</strong> ${safe(data.order_owner)}</div>
+        <div><strong>Olingan vaqt:</strong> ${safe(data.time_taken)}</div>
+        <div><strong>Topshirilgan vaqt:</strong> ${safe(data.time_given)}</div>
+      `;
+
+      let total = 0;
+      (data.products || []).forEach(p => {
+        const qty = Number(p.quantity || 0);
+        const price = Number(p.price || 0);
+        const lineTotal = qty * price;
+        total += lineTotal;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${safe(p.product)}</td>
+          <td class="qty">${qty} ${safe(p.measurement)}</td>
+          <td class="money">${fmtMoney(lineTotal)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tfoot.innerHTML = `
         <tr>
-          <td>${p.product}</td>
-          <td>${p.quantity} ${p.measurement}</td>
-          <td>${lineTotal.toLocaleString()} so'm</td>
-        </tr>`;
-    });
+          <td colspan="2">Umumiy</td>
+          <td class="money">${fmtMoney(total)}</td>
+        </tr>
+      `;
+    }
 
-    // Render total
-    document.querySelector("#products tfoot").innerHTML = `
-      <tr>
-        <td colspan="2">Umumiy</td>
-        <td>${total.toLocaleString()} so'm</td>
-      </tr>
-    `;
+    async function toImageAndPrint() {
+      const node = document.getElementById('receipt');
+      // Increase resolution for sharper thermal output
+      const scale = Math.max(2, (window.devicePixelRatio || 1) * 2);
+      const canvas = await html2canvas(node, {
+        backgroundColor: '#ffffff',
+        scale,
+        useCORS: true
+      });
+      const dataUrl = canvas.toDataURL('image/png');
 
-    // Auto print
-    window.print();
+      // Set download link as fallback
+      const dl = document.getElementById('downloadBtn');
+      dl.href = dataUrl;
+
+      // Print: open a minimal window with correct @page and image sized to 80mm
+      const w = window.open('', '_blank');
+      if (!w) return; // Popup blocked; user can press Print button instead
+
+      w.document.write(`<!doctype html>
+        <html><head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Print</title>
+        <style>
+          @page { size: 80mm auto; margin: 0; }
+          html, body { margin: 0; padding: 0; background: #fff; }
+          img { width: 80mm; height: auto; display: block; }
+        </style>
+        </head>
+        <body>
+          <img src="${dataUrl}" alt="receipt" />
+          <script>
+            // Give the image a moment to decode before printing
+            window.onload = () => { setTimeout(() => { window.focus(); window.print(); }, 150); };
+          <\/script>
+        </body></n></html>`);
+      w.document.close();
+    }
+
+    // Boot
+    (function init() {
+      let data = {};
+      try {
+        data = JSON.parse(decodeURIComponent(raw || '{}'));
+      } catch (e) {
+        document.body.innerHTML = '<div style="padding:12px;font-family:monospace">Xatolik: noto\'g\'ri ma\'lumot</div>';
+        return;
+      }
+
+      renderReceipt(data);
+      // Try to render & auto-print; on Android this will open system print.
+      toImageAndPrint();
+
+      // Manual actions
+      document.getElementById('printBtn').addEventListener('click', toImageAndPrint);
+    })();
   </script>
 </body>
 </html>
