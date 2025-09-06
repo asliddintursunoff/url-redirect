@@ -2,6 +2,7 @@
   const params = new URLSearchParams(location.search);
   const data = params.get("data");
   if (data) {
+    // Base64 encoded ESC/POS → pass directly
     window.location.href = "rawbt://print?data=" + data;
   } else {
     document.body.innerHTML = "<p>No data found</p>";
