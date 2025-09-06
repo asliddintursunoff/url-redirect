@@ -1,17 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const data = params.get("data");
-    if (data) {
-      window.location.href = "rawbt://print?data=" + data;
-    } else {
-      document.body.innerText = "No data provided!";
-    }
-  </script>
-</head>
-<body>
-Redirecting to RawBT...
-</body>
-</html>
+<script>
+const params = new URLSearchParams(window.location.search);
+const data = params.get("data");
+if (data) {
+  // Use absolute URL with RawBT protocol
+  window.location.href = "rawbt://print?data=" + encodeURIComponent(data);
+} else {
+  document.body.innerText = "No data provided!";
+}
+</script>
