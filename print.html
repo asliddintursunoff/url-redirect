@@ -13,7 +13,8 @@ if (data) {
 const params = new URLSearchParams(window.location.search);
 let data = params.get("data");
 if (data) {
-  // Add current time to receipt before redirect
+  let decoded = decodeURIComponent(data);
+
   const now = new Date();
   const formatted =
     now.getDate().toString().padStart(2, "0") + "-" +
@@ -22,11 +23,14 @@ if (data) {
     now.getHours().toString().padStart(2, "0") + ":" +
     now.getMinutes().toString().padStart(2, "0");
 
-  // Append to receipt text
-  data = decodeURIComponent(data) + "\nTopshirilgan: " + formatted;
+  // Insert after "Olingan Vaqt" line
+  decoded = decoded.replace(
+    /(Olingan Vaqt.*\n)/,
+    `$1Topshirilgan    : ${formatted}\n`
+  );
 
-  // Redirect with updated data
-  window.location.href = "rawbt://" + encodeURIComponent(data);
+  // Redirect with updated text
+  window.location.href = "rawbt://" + encodeURIComponent(decoded);
 } else {
   document.body.innerText = "No data provided!";
 }
